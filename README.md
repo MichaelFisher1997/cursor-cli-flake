@@ -16,13 +16,13 @@ A Nix flake that packages the [Cursor](https://cursor.com) CLI for reproducible 
 ### Run directly (no installation)
 
 ```bash
-nix run github:YOUR_USERNAME/cursor-cli-flake
+nix run github:MichaelFisher1997/cursor-cli-flake
 ```
 
 ### Install to user profile
 
 ```bash
-nix profile install github:YOUR_USERNAME/cursor-cli-flake
+nix profile install github:MichaelFisher1997/cursor-cli-flake
 ```
 
 ### Use with Home Manager
@@ -34,7 +34,7 @@ Add to your `flake.nix`:
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
-    cursor-flake.url = "github:YOUR_USERNAME/cursor-cli-flake";
+    cursor-flake.url = "github:MichaelFisher1997/cursor-cli-flake";
   };
 
   outputs = { self, nixpkgs, home-manager, cursor-flake, ... }:
@@ -46,8 +46,8 @@ Add to your `flake.nix`:
       inherit pkgs;
       modules = [
         {
-          home.username = "me";
-          home.homeDirectory = "/home/me";
+          home.username = "USER";
+          home.homeDirectory = "/home/USER";
           home.packages = [ cursor-flake.packages.${system}.default ];
         }
       ];
