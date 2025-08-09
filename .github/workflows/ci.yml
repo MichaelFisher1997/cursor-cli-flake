@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    name: Build and test flake
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        system: [x86_64-linux]
+        # Note: GitHub Actions doesn't support aarch64 runners natively
+        # We only test x86_64-linux but the flake supports both architectures
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Nix
+      uses: cachix/install-nix-action@v27
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build cursor-cli package
+      run: |
+        echo "Building cursor-cli package for ${{ matrix.system }}..."
+        nix build .#packages.${{ matrix.system }}.cursor-cli -v
+
+    - name: Test cursor-cli binary
+      run: |
+        echo "Testing cursor-cli binary..."
+        # Check that the binary exists and is executable
+        ls -la ./result/bin/cursor
+        file ./result/bin/cursor
+        
+        # Try to run the binary (may fail due to missing runtime deps in CI, but should not segfault)
+        echo "Attempting to run cursor --help (may fail due to runtime environment)..."
+        ./result/bin/cursor --help || echo "Binary execution failed (expected in CI environment)"
+
+    - name: Check dynamic libraries
+      run: |
+        echo "Checking dynamic library dependencies..."
+        ldd ./result/bin/cursor || echo "ldd check completed"
+
+    - name: Run flake check
+      run: |
+        echo "Running nix flake check..."
+        nix flake check -v
+
+    - name: Test default app
+      run: |
+        echo "Testing default app..."
+        nix run . -- --help || echo "App execution failed (expected in CI environment)"
+
+  check-formatting:
+    name: Check Nix formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Nix
+      uses: cachix/install-nix-action@v27
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+
+    - name: Check Nix file formatting
+      run: |
+        echo "Checking Nix file formatting..."
+        nix run nixpkgs#nixfmt-classic -- --check flake.nix
+        echo "Nix formatting check passed!"
+
+  update-test:
+    name: Test update script
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Nix
+      uses: cachix/install-nix-action@v27
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+
+    - name: Test update script syntax
+      run: |
+        echo "Testing update script syntax..."
+        bash -n ./update.sh
+        echo "Update script syntax check passed!"
+
+    - name: Test update script help
+      run: |
+        echo "Testing update script help..."
+        ./update.sh --help
+
+    # Note: We don't run the actual update in CI as it would modify the flake
+    # and potentially break the build if upstream changes

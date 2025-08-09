@@ -1,0 +1,33 @@
+# Nix build outputs
+result
+result-*
+
+# Direnv
+.direnv/
+.envrc
+
+# Nix development shell
+shell.nix
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
